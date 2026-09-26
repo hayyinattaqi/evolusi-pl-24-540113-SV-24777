@@ -1,0 +1,83 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+      - name: Copy .env
+        run: cp .env.example .env
+      - name: Generate key
+        run: php artisan key:generate
+      - name: Run migrations (sqlite)
+        run: |
+          touch database/database.sqlite
+          php artisan migrate --force
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+      - name: Run tests
+        run: php artisan test
+
+  staging:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to staging (simulasi)
+        run: echo "Deploying to staging environment..."
+
+  production:
+    needs: staging
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 1. Kunci pintu - tampilkan halaman pemeliharaan
+        run: echo "php artisan down --retry=60"
+
+      - name: 2. Ambil kode terbaru
+        run: echo "git pull origin main"
+
+      - name: 3. Pasang dependensi (tanpa paket dev)
+        run: echo "composer install --no-dev --optimize-autoloader"
+
+      - name: 4. Ubah skema basis data
+        run: echo "php artisan migrate --force"
+
+      - name: 5. Bangun ulang cache
+        run: |
+          echo "php artisan config:cache"
+          echo "php artisan route:cache"
+          echo "php artisan view:cache"
+
+      - name: 6. Muat ulang pekerja antrean
+        run: echo "php artisan queue:restart"
+
+      - name: 7. Buka pintu kembali
+        run: echo "php artisan up"
