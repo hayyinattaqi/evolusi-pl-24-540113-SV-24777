@@ -9,7 +9,7 @@ const data = [
 
 describe('logika todo', () => {
   it('menghitung jumlah tugas yang selesai', () => {
-    expect(hitungSelesai(data)).toBe(99)
+    expect(hitungSelesai(data)).toBe(2)
   })
 
   it('membuat teks ringkasan', () => {
