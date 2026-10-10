@@ -5,8 +5,4 @@ vendor
 .env.local
 frontend/node_modules
 frontend/dist
-storage/logs
-storage/framework/cache
-storage/framework/sessions
-storage/framework/views
 database/database.sqlite
